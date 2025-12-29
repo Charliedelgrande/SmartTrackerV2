@@ -4,6 +4,7 @@ import { useMemo, useState, type CSSProperties } from "react"
 import { TabBar, type TabKey } from "@/components/TabBar"
 import { Toaster } from "@/components/ui/sonner"
 import { CaloriesScreen } from "@/screens/CaloriesScreen"
+import { OverviewScreen } from "@/screens/OverviewScreen"
 import { WeightScreen } from "@/screens/WeightScreen"
 import { WorkoutScreen } from "@/screens/WorkoutScreen"
 
@@ -21,6 +22,7 @@ const titleByTab: Record<TabKey, string> = {
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>("weight")
+  const [overviewOpen, setOverviewOpen] = useState(false)
 
   const accent = accentByTab[tab]
   const title = titleByTab[tab]
@@ -56,8 +58,41 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        <TabBar tab={tab} onChange={setTab} />
+        <TabBar tab={tab} onChange={setTab} onOverview={() => setOverviewOpen(true)} />
       </div>
+
+      <AnimatePresence>
+        {overviewOpen ? (
+          <>
+            <motion.div
+              className="fixed inset-0 z-50 bg-black/60"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOverviewOpen(false)}
+            />
+            <motion.div
+              className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md rounded-t-2xl border border-border bg-card shadow-2xl"
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(_e, info) => {
+                if (info.offset.y > 90) setOverviewOpen(false)
+              }}
+              style={{ touchAction: "pan-y" }}
+            >
+              <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border" />
+              <div className="max-h-[calc(90dvh-24px)] overflow-y-auto px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3 no-scrollbar">
+                <OverviewScreen />
+              </div>
+            </motion.div>
+          </>
+        ) : null}
+      </AnimatePresence>
       <Toaster />
     </div>
   )

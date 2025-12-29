@@ -31,9 +31,23 @@ import { calorieDayYMD, formatDateShort } from "@/lib/date"
 
 const EMPTY_ENTRIES: CalorieEntry[] = []
 
-export function CaloriesScreen() {
-  const today = calorieDayYMD()
+function minutesToTimeValue(mins: number): string {
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+}
 
+function timeValueToMinutes(value: string): number | null {
+  const m = /^(\d{2}):(\d{2})$/.exec(value)
+  if (!m) return null
+  const hh = Number(m[1])
+  const mm = Number(m[2])
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null
+  return hh * 60 + mm
+}
+
+export function CaloriesScreen() {
   const entries = useLiveQuery(
     () => db.calories.orderBy("[date+createdAt]").reverse().toArray(),
     [],
@@ -41,6 +55,8 @@ export function CaloriesScreen() {
   )
 
   const goal = useLiveQuery(() => db.calorieGoals.get("calories"), [], undefined)
+  const resetMinutes = goal?.resetMinutes ?? 12 * 60
+  const today = calorieDayYMD(new Date(), resetMinutes)
 
   const todayEntries = entries.filter((e) => e.date === today)
   const todayTotal = useMemo(
@@ -129,7 +145,9 @@ export function CaloriesScreen() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <CardTitle>Today</CardTitle>
-              <div className="text-xs text-muted-foreground">{today} (resets 12pm)</div>
+              <div className="text-xs text-muted-foreground">
+                {today} (resets {minutesToTimeValue(resetMinutes)})
+              </div>
             </div>
             <button
               type="button"
@@ -299,7 +317,7 @@ export function CaloriesScreen() {
           </SheetHeader>
           <SheetBody>
             <EditGoalForm
-              goal={goal ?? { id: "calories", targetCalories: 0 }}
+              goal={goal ?? { id: "calories", targetCalories: 0, resetMinutes: 12 * 60 }}
               onSave={(next) => void saveGoal(next)}
             />
           </SheetBody>
@@ -429,6 +447,9 @@ function EditGoalForm({
   onSave: (next: CalorieGoal) => void
 }) {
   const [target, setTarget] = useState(String(goal.targetCalories ?? ""))
+  const [resetTime, setResetTime] = useState(
+    minutesToTimeValue(goal.resetMinutes ?? 12 * 60)
+  )
 
   return (
     <div className="flex flex-col gap-3">
@@ -441,11 +462,23 @@ function EditGoalForm({
           placeholder="e.g. 2200"
         />
       </div>
+      <div className="flex flex-col gap-2">
+        <div className="text-xs text-muted-foreground">Reset time</div>
+        <Input
+          type="time"
+          value={resetTime}
+          onChange={(e) => setResetTime(e.target.value)}
+        />
+        <div className="text-xs text-muted-foreground">
+          “Today” switches at this local time.
+        </div>
+      </div>
       <Button
         onClick={() =>
           onSave({
             id: "calories",
             targetCalories: Number(target),
+            resetMinutes: timeValueToMinutes(resetTime) ?? 12 * 60,
           })
         }
         disabled={!target.trim()}

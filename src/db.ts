@@ -42,6 +42,11 @@ export type CalorieEntry = {
 export type CalorieGoal = {
   id: "calories"
   targetCalories: number
+  /**
+   * Minutes after midnight (local) when the "calorie day" resets.
+   * Example: 12:00 -> 720
+   */
+  resetMinutes?: number
 }
 
 class TrackerDB extends Dexie {

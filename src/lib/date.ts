@@ -11,11 +11,11 @@ export function todayYMD(): string {
 
 /**
  * Calories "day" boundary at 12:00 PM local time:
- * - before noon, count toward "yesterday"
- * - at/after noon, count toward "today"
+ * - before reset time, count toward "yesterday"
+ * - at/after reset time, count toward "today"
  */
-export function calorieDayYMD(now: Date = new Date()): string {
-  const shifted = new Date(now.getTime() - 12 * 60 * 60 * 1000)
+export function calorieDayYMD(now: Date = new Date(), resetMinutes = 12 * 60): string {
+  const shifted = new Date(now.getTime() - resetMinutes * 60 * 1000)
   return ymdFromLocalDate(shifted)
 }
 

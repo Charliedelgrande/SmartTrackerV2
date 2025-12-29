@@ -201,9 +201,6 @@ export function WeightScreen() {
           <div className="flex flex-col gap-2">
             {grouped.map(([date, entries]) => (
               <div key={date} className="flex flex-col gap-2">
-                <div className="px-1 text-xs text-muted-foreground">
-                  {formatDateShort(date)} · {date}
-                </div>
                 {entries.map((entry) => {
                   const idx = weights.findIndex((w) => w.id === entry.id)
                   const prev = idx >= 0 ? weights[idx + 1] : undefined
